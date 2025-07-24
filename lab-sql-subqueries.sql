@@ -47,13 +47,15 @@ SELECT title
 FROM film
 WHERE film_id IN (SELECT film_id
 				  FROM film_actor
-                  WHERE actor_id IN (SELECT actor_id
+                  WHERE actor_id = (SELECT actor_id
 									  FROM film_actor
 									  GROUP BY actor_id
 									  HAVING COUNT(film_id) > (SELECT AVG(a.film_count)
 															  FROM (SELECT COUNT(film_id) AS film_count, actor_id
 																	FROM film_actor
-																	GROUP BY actor_id) AS a)));
+																	GROUP BY actor_id) AS a)
+									 ORDER BY COUNT(film_id)
+                                     LIMIT 1));
                   
 
 
@@ -61,14 +63,22 @@ WHERE film_id IN (SELECT film_id
 
 # 7. Find the films rented by the most profitable customer in the Sakila database. 
 # You can use the customer and payment tables to find the most profitable customer, i.e., the customer who has made the largest sum of payments.
-SELECT customer_id, first_name, last_name
-FROM customer
-WHERE customer_ID = (SELECT a.customer_id
-					 FROM (SELECT customer_id, SUM(amount) as total_paid
-						   FROM payment
-						   GROUP BY customer_id
-						   ORDER BY total_paid DESC
-						   LIMIT 1) AS a);
+SELECT title
+FROM FILM
+WHERE film_id IN (SELECT film_id
+				  FROM inventory
+                  WHERE inventory_id IN (SELECT inventory_id
+										FROM rental
+                                        WHERE customer_id = (SELECT customer_id
+															FROM customer
+															WHERE customer_ID = (SELECT a.customer_id
+																				 FROM (SELECT customer_id, SUM(amount) as total_paid
+																					   FROM payment
+																					   GROUP BY customer_id
+																					   ORDER BY total_paid DESC
+																					   LIMIT 1) AS a))));
+
+
 
 # 8. Retrieve the client_id and the total_amount_spent of those clients who spent more than the average of the total_amount spent by each client. 
 # You can use subqueries to accomplish this.
